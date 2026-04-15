@@ -1,0 +1,158 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
+
+
+# -------- Dijkstra --------
+def dijkstra(graph, start, end, cities):
+    n = len(graph)
+    dist = [float("inf")] * n
+    visited = [False] * n
+    parent = [-1] * n
+
+    dist[start] = 0
+
+    for _ in range(n):
+        min_dist = float("inf")
+        u = -1
+        for i in range(n):
+            if not visited[i] and dist[i] < min_dist:
+                min_dist = dist[i]
+                u = i
+
+        visited[u] = True
+
+        for v in range(n):
+            if graph[u][v] != 0 and not visited[v]:
+                if dist[u] + graph[u][v] < dist[v]:
+                    dist[v] = dist[u] + graph[u][v]
+                    parent[v] = u
+
+    path = []
+    cur = end
+    while cur != -1:
+        path.append(cities[cur])
+        cur = parent[cur]
+
+    path.reverse()
+    return path, dist[end]
+
+
+# -------- Load Cities --------
+def load_cities():
+    try:
+        global cities
+        cities = [c.strip() for c in entry_cities.get().split(",")]
+
+        combo_source["values"] = cities
+        combo_dest["values"] = cities
+
+        messagebox.showinfo("Success", "Cities Loaded Successfully!")
+    except:
+        messagebox.showerror("Error", "Invalid city input!")
+
+
+# -------- Calculate --------
+def calculate():
+    try:
+        matrix_input = text_matrix.get("1.0", tk.END).strip().split("\n")
+        graph = [list(map(int, row.split())) for row in matrix_input]
+
+        src = cities.index(combo_source.get())
+        dest = cities.index(combo_dest.get())
+
+        path, distance = dijkstra(graph, src, dest, cities)
+
+        result = f"""
+================ ROUTE RESULT ================
+
+Source        : {cities[src]}
+Destination   : {cities[dest]}
+
+Path          : {" -> ".join(path)}
+Distance      : {distance} km
+Stops         : {len(path)}
+
+=============================================
+"""
+
+        output_box.config(state="normal")
+        output_box.delete("1.0", tk.END)
+        output_box.insert(tk.END, result)
+        output_box.config(state="disabled")
+
+    except:
+        messagebox.showerror("Error", "Please check all inputs!")
+
+
+# -------- UI --------
+root = tk.Tk()
+root.title("Smart City Route Planner")
+root.state("zoomed")
+root.configure(bg="#1e1e1e")  # Dark background
+
+# Title
+tk.Label(
+    root,
+    text="SMART CITY ROUTE PLANNER",
+    font=("Arial", 26, "bold"),
+    fg="white",
+    bg="#1e1e1e",
+).pack(pady=20)
+
+# Frame
+frame = tk.Frame(root, bg="#2c2c2c", padx=20, pady=20)
+frame.pack(pady=10)
+
+# Cities input
+tk.Label(frame, text="Enter Cities (comma separated):", fg="white", bg="#2c2c2c").grid(
+    row=0, column=0, sticky="w"
+)
+
+entry_cities = tk.Entry(frame, width=40)
+entry_cities.grid(row=0, column=1, padx=10)
+
+tk.Button(
+    frame, text="Load Cities", bg="#4CAF50", fg="white", command=load_cities
+).grid(row=0, column=2)
+
+# Matrix
+tk.Label(frame, text="Distance Matrix:", fg="white", bg="#2c2c2c").grid(
+    row=1, column=0, sticky="w"
+)
+
+text_matrix = tk.Text(frame, height=6, width=40)
+text_matrix.grid(row=1, column=1, padx=10)
+
+# Dropdowns
+tk.Label(frame, text="Source City:", fg="white", bg="#2c2c2c").grid(
+    row=2, column=0, sticky="w"
+)
+combo_source = ttk.Combobox(frame)
+combo_source.grid(row=2, column=1)
+
+tk.Label(frame, text="Destination City:", fg="white", bg="#2c2c2c").grid(
+    row=3, column=0, sticky="w"
+)
+combo_dest = ttk.Combobox(frame)
+combo_dest.grid(row=3, column=1)
+
+# Button
+tk.Button(
+    root,
+    text="Find Shortest Route",
+    font=("Arial", 14, "bold"),
+    bg="#2196F3",
+    fg="white",
+    padx=20,
+    pady=5,
+    command=calculate,
+).pack(pady=20)
+
+# Output box
+output_box = tk.Text(
+    root, height=15, width=80, bg="#121212", fg="#00FFAA", font=("Courier", 12)
+)
+output_box.pack(pady=10)
+output_box.config(state="disabled")
+
+root.mainloop()
